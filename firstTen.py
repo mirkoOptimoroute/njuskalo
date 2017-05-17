@@ -6,7 +6,7 @@ import requests
 page = requests.get('http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora')
 soup = BeautifulSoup (page.content, 'lxml')
 elements = []
-i = 0
+
 for li in soup.find_all('article'):
     data = []
     #print(li.find('a').text)
@@ -32,7 +32,4 @@ for i in range(min(len(elements), 10)):
         for j in range (2, len(elements[i])):  
             print(elements[i][j][:-1], end=' ')
         print()
-#This will create a list of buyers:
-#buyers = tree.xpath('//div[@title="buyer-name"]/text()')
-#This will create a list of prices
-#prices = tree.xpath('//span[@class="item-price"]/text()')
+
