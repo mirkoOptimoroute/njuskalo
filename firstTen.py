@@ -2,13 +2,20 @@ from __future__ import print_function
 from bs4 import BeautifulSoup
 import requests
 
-class Element:
-    naslov = ""
-    cijena = []
+def is_int(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
-def find_all_elements (elements, soup):
-    #elements = []
-    element = Element()
+class Element:
+    def __init__(self, naslov, cijena):
+        self.naslov = naslov 
+        self.cijena = cijena
+   
+
+def find_all_elements (elements, soup):  
     for li in soup.find_all('article'):
         data = []
         #print(li.find('a').text)
@@ -16,9 +23,8 @@ def find_all_elements (elements, soup):
             if child.name == 'h3':
                 for ch in child.children:
                     if ch.name == 'a':
-                        #data.append(ch.text)
-                        #print(ch.text)
-                        element.naslov = ch.text
+                        cijena = []
+                        naslov =  ch.text
                         article = ch.parent.parent 
                         #soup2 = BeautifulSoup (article, 'lxml')
                         #soup2.find_all(class = 'price')                       
@@ -26,39 +32,46 @@ def find_all_elements (elements, soup):
                             if entityPrice.name:
                                 if 'class' in entityPrice.attrs:
                                     if entityPrice['class'][0] == 'price':
-                                        #data.append(entityPrice.text)
-                                        element.cijena.append(entityPrice.text)
-                        elements.append(element)
+                                        cijena.append(entityPrice.text)
+                        elements.append(Element(naslov, cijena))
     return elements
 
 elements = []
-urls = ['http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=2',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=3',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=4',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=5',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=6',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=7',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=8',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=9',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=10',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=11',
-'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page=12'
-]
+home = 'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora'
+url = 'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page='
 
-for url in urls:
-    page = requests.get(url)   
+page = requests.get(home) 
+soup = BeautifulSoup (page.content, 'lxml')
+buttons = soup.find_all ('button')
+numbers = [] 
+for button in buttons:
+    if 'data-page' in button.attrs:
+        listNum = button.text.split("-")
+        for num in listNum:
+            numbers.append(num) 
+
+max = 0
+for number in numbers:
+    if is_int(number):
+        num = int(number)
+        if num > max:
+            max = num
+
+for i in xrange(max):
+    newUrl = url + str(i+1)
+    page = requests.get(newUrl)   
     soup = BeautifulSoup (page.content, 'lxml')
     elements = find_all_elements(elements, soup)
-#print (len(elements))
-#print(elements.getNaslov())
-#print (elements)
-#Elements u strukturu
+
 for element in elements:
-    print ('Naslov: ' + element.naslov)
-    for cijena in element.cijena:
-        print ('Cijena: ' + cijena, end = ' ') 
-            #for k in xrange (2, len(elements[i][j])):  
-             #   print(elements[i][j][k][:-1], end=' ')
-        print()
+    #print(vars(element))
+    print ('Naslov: ' + element.naslov, end = ' ')
+    if element.cijena:
+        print('Cijena: ', end = ' ') 
+        for cijena in element.cijena:
+            if cijena[-1:] == '~':               
+                print (cijena[:-1], end = ' ') 
+            else:   
+                print (cijena, end = ' ') 
+    print()
 
